@@ -21,19 +21,20 @@ public class DataBootstrap {
     private ObjectMapper objectMapper;
 
     @PostConstruct
-    public void init() {
+    public void init() throws IOException {
         InputStream inputStream = this.getClass().getResourceAsStream(DATASTORE_LOCATION);
 
         Employee[] employees = null;
+
 
         try {
             employees = objectMapper.readValue(inputStream, Employee[].class);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-
         for (Employee employee : employees) {
             employeeRepository.insert(employee);
         }
+
     }
 }

@@ -1,6 +1,8 @@
 package com.mindex.challenge.service.impl;
 
+import com.mindex.challenge.data.Compensation;
 import com.mindex.challenge.data.Employee;
+import com.mindex.challenge.data.ReportingStructure;
 import com.mindex.challenge.service.EmployeeService;
 import org.junit.Before;
 import org.junit.Test;
@@ -24,6 +26,8 @@ public class EmployeeServiceImplTest {
 
     private String employeeUrl;
     private String employeeIdUrl;
+    private String reportingStructureUrl;
+    private String compensationUrl;
 
     @Autowired
     private EmployeeService employeeService;
@@ -38,6 +42,41 @@ public class EmployeeServiceImplTest {
     public void setup() {
         employeeUrl = "http://localhost:" + port + "/employee";
         employeeIdUrl = "http://localhost:" + port + "/employee/{id}";
+        compensationUrl = "http://localhost:" + port + "/compensation/{id}";
+        reportingStructureUrl = "http://localhost:" + port + "/employeeRS/{id}";
+    }
+
+    @Test
+    public void testGetReportingStructure() {
+        //Testing that employee John Lennon's number of reports is equal to 4, as it should be
+        ReportingStructure rs = restTemplate.getForEntity(reportingStructureUrl, ReportingStructure.class, "16a596ae-edd3-4847-99fe-c4518e82c86f").getBody();
+        assertEquals(rs.getNumberOfReports(), 4);
+    }
+
+    @Test
+    public void testCompensation() {
+
+        Compensation comp = new Compensation();
+
+        //recommended base salary for typical SWE candidate at Mindex
+        comp.setSalary(250000);
+        comp.setEffectiveDate("02/20/2025");
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        //Request to update employee John Lennon's compensation in the database file
+        Compensation updateComp =
+                restTemplate.exchange(compensationUrl,
+                        HttpMethod.PUT,
+                        new HttpEntity<Compensation>(comp, headers),
+                        Compensation.class,
+                        "16a596ae-edd3-4847-99fe-c4518e82c86f").getBody();
+
+        //Testing that the compensation update occurred as expected
+        Compensation readComp = restTemplate.getForEntity(compensationUrl, Compensation.class, "16a596ae-edd3-4847-99fe-c4518e82c86f").getBody();
+        assertEquals(updateComp.getSalary(), readComp.getSalary());
+        assertEquals(updateComp.getEffectiveDate(), readComp.getEffectiveDate());
     }
 
     @Test
@@ -59,7 +98,6 @@ public class EmployeeServiceImplTest {
         Employee readEmployee = restTemplate.getForEntity(employeeIdUrl, Employee.class, createdEmployee.getEmployeeId()).getBody();
         assertEquals(createdEmployee.getEmployeeId(), readEmployee.getEmployeeId());
         assertEmployeeEquivalence(createdEmployee, readEmployee);
-
 
         // Update checks
         readEmployee.setPosition("Development Manager");
